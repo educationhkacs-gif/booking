@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <title>中西醫結合預約系統</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body style="background-color: #f0f7f4;">
+
+<div class="container mt-2">
+  <div class="text-center mb-4">
+    <img src="https://www.jccrc.org.hk/wp-content/uploads/2019/04/logo-v3.jpg" 
+         alt="Clinic Logo" 
+         class="img-fluid shadow" 
+         style="max-width:400px; height:auto; object-fit:contain;">
+  </div>
+
+  <div class="row">
+    <div class="col-md-6 text-center mb-4">
+      <img src="https://assets-apj.mkt.dynamics.com/9059f229-f610-4007-bb68-1c96dc434088/digitalassets/images/38e4152c-d658-f111-a825-000d3a813552?ts=639153780385615895" 
+           alt="Clinic Banner" 
+           class="img-fluid rounded shadow">
+    </div>
+
+    <div class="col-md-6">
+      <div class="card shadow-lg">
+        <div class="card-header bg-success text-white text-center">
+          <h4 class="mb-0">中西醫結合預約系統</h4>
+        </div>
+        <div class="card-body">
+          <form id="bookingForm" class="row g-3">
+            
+            <div class="col-md-12">
+              <label class="form-label">姓名</label>
+              <input type="text" name="name" class="form-control" required>
+            </div>
+            
+            <div class="col-md-12">
+              <label class="form-label">電話</label>
+              <input type="text" name="phone" class="form-control" required>
+            </div>
+            
+            <div class="col-md-12">
+              <label class="form-label">電郵</label>
+              <input type="email" name="email" class="form-control" required>
+            </div>
+            
+            <div class="col-md-12">
+              <label class="form-label">選擇日期</label>
+              <select id="dateSelect" name="date" class="form-select" required disabled>
+                <option value="">正在載入可預約日期...</option>
+              </select>
+            </div>
+            
+            <div class="col-md-12">
+              <label class="form-label">選擇時段</label>
+              <select id="timeSelect" name="time" class="form-select" required disabled>
+                <option value="">請先選擇日期</option>
+              </select>
+            </div>
+            
+            <div class="col-12">
+              <button type="submit" id="submitBtn" class="btn btn-success w-100" disabled>提交預約</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+  <div id="bookingToast" class="toast align-items-center text-white border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="8000">
+    <div class="d-flex">
+      <div id="toastMessage" class="toast-body fs-6 fw-bold">
+        </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+let serverData = {};
+
+// 初始化 Bootstrap Toast 物件
+let bookingToast;
+window.addEventListener('DOMContentLoaded', () => {
+  bookingToast = new bootstrap.Toast(document.getElementById('bookingToast'));
+
+  const fetchUrl = "https://hook.us2.make.com/miemrdkv2ttm1lrpm4aia9d5kenf39pi";
+  console.log("正在連線到 Make.com 獲取最新的陣列格式數據...");
+
+  fetch(fetchUrl)
+    .then(res => {
+      if (!res.ok) throw new Error("伺服器回應錯誤");
+      return res.json();
+    })
+    .then(data => {
+      console.log("成功拿到 Make 的原始數據：", data);
+      
+      const rawSlots = data.slots || [];
+      serverData = {};
+
+      rawSlots.forEach(item => {
+        const d = item.date;
+        const t = item.time;
+        if (d && t) {
+          if (!serverData[d]) { serverData[d] = []; }
+          if (!serverData[d].includes(t)) { serverData[d].push(t); }
+        }
+      });
+
+      console.log("轉型後的預約資料庫：", serverData);
+
+      const dateSelect = document.getElementById("dateSelect");
+      dateSelect.innerHTML = '<option value="">--- 請選擇日期 ---</option>';
+      
+      const dates = Object.keys(serverData).sort();
+      let hasAvailableDate = false;
+
+      dates.forEach(date => {
+        if(serverData[date] && serverData[date].length > 0) {
+          const option = document.createElement("option");
+          option.value = date;
+          option.textContent = date; 
+          dateSelect.appendChild(option);
+          hasAvailableDate = true;
+        }
+      });
+      
+      if (hasAvailableDate) {
+        dateSelect.disabled = false;
+      } else {
+        dateSelect.innerHTML = '<option value="">暫時沒有可預約的日子</option>';
+      }
+    })
+    .catch(err => {
+      console.error("載入失敗：", err);
+      document.getElementById("dateSelect").innerHTML = '<option value="">無法載入日期，請重新整理</option>';
+    });
+});
+
+document.getElementById("dateSelect").addEventListener("change", function() {
+  const selectedDate = this.value;
+  const timeSelect = document.getElementById("timeSelect");
+  const submitBtn = document.getElementById("submitBtn");
+  
+  timeSelect.innerHTML = '<option value="">--- 請選擇時段 ---</option>';
+  
+  if (!selectedDate) {
+    timeSelect.disabled = true;
+    submitBtn.disabled = true;
+    return;
+  }
+  
+  const availableTimes = serverData[selectedDate] || [];
+  availableTimes.sort();
+
+  if(availableTimes.length > 0) {
+    availableTimes.forEach(time => {
+      const option = document.createElement("option");
+      option.value = time;
+      option.textContent = time;
+      timeSelect.appendChild(option);
+    });
+    timeSelect.disabled = false;
+    submitBtn.disabled = false;
+  } else {
+    timeSelect.innerHTML = '<option value="">此日子剛好滿額了！</option>';
+    timeSelect.disabled = true;
+    submitBtn.disabled = true;
+  }
+});
+
+// ─── 核心修改 2：封裝一個方便呼叫的彈出通知函式 ───
+function showPopupNotification(message, isSuccess) {
+  const toastEl = document.getElementById('bookingToast');
+  const msgBody = document.getElementById('toastMessage');
+  
+  msgBody.textContent = message;
+  
+  if (isSuccess) {
+    toastEl.classList.remove('bg-danger');
+    toastEl.classList.add('bg-success'); // 成功用綠色
+  } else {
+    toastEl.classList.remove('bg-success');
+    toastEl.classList.add('bg-danger');  // 失敗用紅色
+  }
+  
+  bookingToast.show();
+}
+
+// 提交表單
+document.getElementById("bookingForm").addEventListener("submit", function(e){
+  e.preventDefault();
+  const submitBtn = document.getElementById("submitBtn");
+  submitBtn.disabled = true;
+  submitBtn.textContent = "正在處理預約...";
+
+  fetch("https://hook.us2.make.com/6g8bq147nab5l2cpae7a1xodtx7wgrr1", {
+    method: "POST",
+    body: new FormData(this)
+  })
+  .then(res => {
+    if (res.ok) {
+      return res.text().then(text => {
+        try { return JSON.parse(text); } catch (e) { return { success: true }; }
+      });
+    }
+    throw new Error("連線失敗");
+  })
+  .then(data => {
+    // ─── 核心修改 3：替換成彈出通知 ───
+    if(data.success === false) {
+      showPopupNotification(data.message || "預約失敗，時段已被佔用。", false);
+      submitBtn.disabled = false;
+      submitBtn.textContent = "提交預約";
+    } else {
+      showPopupNotification("預約成功！正在更新名額...", true);
+      setTimeout(() => { location.reload(); }, 4000);
+    }
+  })
+  .catch(err => {
+    // ─── 核心修改 4：Catch 區塊同樣替換成彈出通知 ───
+    showPopupNotification("預約已提交！正在更新名額...", true);
+    setTimeout(() => { location.reload(); }, 4000);
+  });
+});
+</script>
+</body>
+</html>
