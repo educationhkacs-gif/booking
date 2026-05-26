@@ -2,64 +2,83 @@
 <html lang="zh-HK">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>中西醫結合預約系統</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>中西醫結合預約系統</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    /* 手機版優化 CSS (RWD) */
+    @media (max-width: 575.98px) {
+      /* 調整 Logo 在手機上的最大寬度為原來的 60%，看起來更精緻 */
+      .clinic-logo {
+        max-width: 60% !important;
+      }
+      /* 調整標題字體大小 */
+      .card-header h4 {
+        font-size: 1.15rem;
+      }
+      /* 縮小 Banner 與表單之間的間距 */
+      .row > [class*='col-'] {
+        margin-bottom: 1.5rem !important;
+      }
+    }
+  </style>
 </head>
 <body style="background-color: #f0f7f4;">
 
 <div class="container mt-2">
-  <div class="text-center mb-4">
-    <img src="https://www.jccrc.org.hk/wp-content/uploads/2019/04/logo-v3.jpg" 
+  <div class="text-center mb-4 mt-3">
+    <img src="https://www.jccrc.org.hk/wp-content/uploads/2019/04/logo_sc_h-1.png" 
          alt="Clinic Logo" 
-         class="img-fluid shadow" 
-         style="max-width:400px; height:auto; object-fit:contain;">
+         class="img-fluid clinic-logo" 
+         style="max-width: 400px; height:auto; object-fit:contain;">
   </div>
 
   <div class="row">
     <div class="col-md-6 text-center mb-4">
       <img src="https://assets-apj.mkt.dynamics.com/9059f229-f610-4007-bb68-1c96dc434088/digitalassets/images/38e4152c-d658-f111-a825-000d3a813552?ts=639153780385615895" 
            alt="Clinic Banner" 
-           class="img-fluid rounded shadow">
+           class="img-fluid rounded shadow-sm">
     </div>
 
     <div class="col-md-6">
-      <div class="card shadow-lg">
+      <div class="card shadow-lg mb-4">
         <div class="card-header bg-success text-white text-center">
-          <h4 class="mb-0">中西醫結合預約系統</h4>
+          <h4 class="mb-0 py-1">中西醫結合預約系統</h4>
         </div>
         <div class="card-body">
           <form id="bookingForm" class="row g-3">
             
             <div class="col-md-12">
-              <label class="form-label">姓名</label>
-              <input type="text" name="name" class="form-control" required>
+              <label class="form-label fw-bold">姓名</label>
+              <input type="text" name="name" class="form-control form-control-lg" placeholder="請輸入姓名" required>
             </div>
             
             <div class="col-md-12">
-              <label class="form-label">電話</label>
-              <input type="tel" name="phone" class="form-control" required> </div>
-            
-            <div class="col-md-12">
-              <label class="form-label">電郵</label>
-              <input type="email" name="email" class="form-control" required>
+              <label class="form-label fw-bold">電話</label>
+              <input type="tel" name="phone" class="form-control form-control-lg" placeholder="請輸入香港電話" required>
             </div>
             
             <div class="col-md-12">
-              <label class="form-label">選擇日期</label>
-              <select id="dateSelect" name="date" class="form-select" required disabled>
+              <label class="form-label fw-bold">電郵</label>
+              <input type="email" name="email" class="form-control form-control-lg" placeholder="請輸入常用電郵" required>
+            </div>
+            
+            <div class="col-md-12">
+              <label class="form-label fw-bold">選擇日期</label>
+              <select id="dateSelect" name="date" class="form-select form-select-lg" required disabled>
                 <option value="">正在載入可預約日期...</option>
               </select>
             </div>
             
             <div class="col-md-12">
-              <label class="form-label">選擇時段</label>
-              <select id="timeSelect" name="time" class="form-select" required disabled>
+              <label class="form-label fw-bold">選擇時段</label>
+              <select id="timeSelect" name="time" class="form-select form-select-lg" required disabled>
                 <option value="">請先選擇日期</option>
               </select>
             </div>
             
-            <div class="col-12">
-              <button type="submit" id="submitBtn" class="btn btn-success w-100" disabled>提交預約</button>
+            <div class="col-12 mt-4">
+              <button type="submit" id="submitBtn" class="btn btn-success btn-lg w-100" disabled>提交預約</button>
             </div>
           </form>
         </div>
@@ -188,13 +207,12 @@ document.getElementById("bookingForm").addEventListener("submit", function(e){
   e.preventDefault();
   const submitBtn = document.getElementById("submitBtn");
   
-  // 防止重複點擊並更改樣式
   submitBtn.disabled = true;
   submitBtn.classList.remove('btn-success');
   submitBtn.classList.add('btn-secondary');
-  submitBtn.textContent = "正在處理預約，請勿關閉網頁...";
+  submitBtn.textContent = "正在處理，請勿關閉...";
 
-  // ─── 核心修改：將 FormData 轉換為 URL 編碼格式，確保 Make.com 100% 能解析 ───
+  // 轉換為 URL 編碼格式，確保 Make.com 能解析
   const formData = new FormData(this);
   const searchParams = new URLSearchParams();
   for (const pair of formData) {
@@ -204,7 +222,7 @@ document.getElementById("bookingForm").addEventListener("submit", function(e){
   fetch("https://hook.us2.make.com/6g8bq147nab5l2cpae7a1xodtx7wgrr1", {
     method: "POST",
     headers: {
-      "Content-Type": "application/x-www-form-urlencoded" // 明確告訴後端資料格式
+      "Content-Type": "application/x-www-form-urlencoded"
     },
     body: searchParams.toString()
   })
@@ -224,13 +242,11 @@ document.getElementById("bookingForm").addEventListener("submit", function(e){
       submitBtn.textContent = "提交預約";
     } else {
       showPopupNotification("預約成功！正在更新名額...", true);
-      // 給予足夠時間讓手機用戶看清提示再重新載入
       setTimeout(() => { location.reload(); }, 3500);
     }
   })
   .catch(err => {
     console.error(err);
-    // 即使後端回傳格式有微小落差，只要進入這裡也當作已提交
     showPopupNotification("預約已提交！頁面即將更新...", true);
     setTimeout(() => { location.reload(); }, 3500);
   });
