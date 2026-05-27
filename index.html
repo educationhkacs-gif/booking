@@ -5,21 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>中西醫結合預約系統</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_green.css">
+  
   <style>
     /* 手機版優化 CSS (RWD) */
     @media (max-width: 575.98px) {
-      /* 調整 Logo 在手機上的最大寬度為原來的 60%，看起來更精緻 */
       .clinic-logo {
         max-width: 60% !important;
       }
-      /* 調整標題字體大小 */
       .card-header h4 {
         font-size: 1.15rem;
       }
-      /* 縮小 Banner 與表單之間的間距 */
       .row > [class*='col-'] {
         margin-bottom: 1.5rem !important;
       }
+    }
+    /* 修正 Flatpickr 在 Bootstrap 內的樣式微調 */
+    .flatpickr-input[readonly] {
+      background-color: #fff !important;
     }
   </style>
 </head>
@@ -65,9 +70,7 @@
             
             <div class="col-md-12">
               <label class="form-label fw-bold">選擇日期</label>
-              <select id="dateSelect" name="date" class="form-select form-select-lg" required disabled>
-                <option value="">正在載入可預約日期...</option>
-              </select>
+              <input type="text" id="dateInput" name="date" class="form-control form-control-lg" placeholder="正在載入日曆..." required disabled>
             </div>
             
             <div class="col-md-12">
@@ -97,10 +100,13 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/zh-tw.js"></script>
 
 <script>
 let serverData = {};
 let bookingToast;
+let fpInstance; // 儲存 Flatpickr 的實例
 
 window.addEventListener('DOMContentLoaded', () => {
   bookingToast = new bootstrap.Toast(document.getElementById('bookingToast'));
@@ -117,7 +123,7 @@ window.addEventListener('DOMContentLoaded', () => {
       serverData = {};
 
       rawSlots.forEach(item => {
-        const d = item.date;
+        const d = item.date; // 格式需為 YYYY-MM-DD
         const t = item.time;
         if (d && t) {
           if (!serverData[d]) { serverData[d] = []; }
@@ -125,36 +131,36 @@ window.addEventListener('DOMContentLoaded', () => {
         }
       });
 
-      const dateSelect = document.getElementById("dateSelect");
-      dateSelect.innerHTML = '<option value="">--- 請選擇日期 ---</option>';
+      const dateInput = document.getElementById("dateInput");
+      const enableDates = Object.keys(serverData); // 獲取所有有時段的日期陣列
       
-      const dates = Object.keys(serverData).sort();
-      let hasAvailableDate = false;
+      if (enableDates.length > 0) {
+        dateInput.disabled = false;
+        dateInput.placeholder = "請點擊選擇日期";
 
-      dates.forEach(date => {
-        if(serverData[date] && serverData[date].length > 0) {
-          const option = document.createElement("option");
-          option.value = date;
-          option.textContent = date; 
-          dateSelect.appendChild(option);
-          hasAvailableDate = true;
-        }
-      });
-      
-      if (hasAvailableDate) {
-        dateSelect.disabled = false;
+        // 初始化 Flatpickr 日曆
+        fpInstance = flatpickr("#dateInput", {
+          locale: "zh_tw",          // 繁體中文
+          dateFormat: "Y-m-d",      // 輸出格式 YYYY-MM-DD
+          minDate: "today",         // 不能選過去的時間
+          maxDate: new Date().fp_incr(90), // 限制只能選 3 個月內（90天）
+          enable: enableDates,      // 【核心】只有這個陣列裡的日期可以選，其餘一律變灰！
+          onChange: function(selectedDates, dateStr) {
+            handleDateChange(dateStr);
+          }
+        });
       } else {
-        dateSelect.innerHTML = '<option value="">暫時沒有可預約的日子</option>';
+        dateInput.placeholder = "暫時沒有可預約的日子";
       }
     })
     .catch(err => {
       console.error("載入失敗：", err);
-      document.getElementById("dateSelect").innerHTML = '<option value="">無法載入日期，請重新整理</option>';
+      document.getElementById("dateInput").placeholder = "無法載入日曆，請重新整理";
     });
 });
 
-document.getElementById("dateSelect").addEventListener("change", function() {
-  const selectedDate = this.value;
+// 當使用者在日曆選好日期時觸發
+function handleDateChange(selectedDate) {
   const timeSelect = document.getElementById("timeSelect");
   const submitBtn = document.getElementById("submitBtn");
   
@@ -183,7 +189,7 @@ document.getElementById("dateSelect").addEventListener("change", function() {
     timeSelect.disabled = true;
     submitBtn.disabled = true;
   }
-});
+}
 
 function showPopupNotification(message, isSuccess) {
   const toastEl = document.getElementById('bookingToast');
@@ -202,7 +208,7 @@ function showPopupNotification(message, isSuccess) {
   bookingToast.show();
 }
 
-// 提交表單 - 優化手機相容性
+// 提交表單
 document.getElementById("bookingForm").addEventListener("submit", function(e){
   e.preventDefault();
   const submitBtn = document.getElementById("submitBtn");
@@ -212,7 +218,6 @@ document.getElementById("bookingForm").addEventListener("submit", function(e){
   submitBtn.classList.add('btn-secondary');
   submitBtn.textContent = "正在處理，請勿關閉...";
 
-  // 轉換為 URL 編碼格式，確保 Make.com 能解析
   const formData = new FormData(this);
   const searchParams = new URLSearchParams();
   for (const pair of formData) {
