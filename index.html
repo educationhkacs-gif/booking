@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>中西醫結合預約系統</title>
+  <title>中西醫結合預約系統 | Integrated Chinese & Western Medicine Booking System</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -16,15 +16,28 @@
         max-width: 60% !important;
       }
       .card-header h4 {
-        font-size: 1.15rem;
+        font-size: 1.1rem;
       }
       .row > [class*='col-'] {
         margin-bottom: 1.5rem !important;
+      }
+      .form-label {
+        font-size: 0.95rem;
+      }
+      .form-control, .form-select, .btn {
+        font-size: 0.95rem !important;
       }
     }
     /* 修正 Flatpickr 在 Bootstrap 內的樣式微調 */
     .flatpickr-input[readonly] {
       background-color: #fff !important;
+    }
+    /* 雙語副標題微調 */
+    .en-sub {
+      font-size: 0.85rem;
+      display: block;
+      font-weight: normal;
+      opacity: 0.9;
     }
   </style>
 </head>
@@ -32,7 +45,7 @@
 
 <div class="container mt-2">
   <div class="text-center mb-4 mt-3">
-    <img src="https://www.jccrc.org.hk/wp-content/uploads/2019/04/logo-v3.jpg" 
+    <img src="https://assets-apj.mkt.dynamics.com/9059f229-f610-4007-bb68-1c96dc434088/digitalassets/images/7fb5fa80-7711-ed11-b83e-000d3a81267c?ts=637949408562615030" 
          alt="Clinic Logo" 
          class="img-fluid clinic-logo" 
          style="max-width: 400px; height:auto; object-fit:contain;">
@@ -48,40 +61,45 @@
     <div class="col-md-6">
       <div class="card shadow-lg mb-4">
         <div class="card-header bg-success text-white text-center">
-          <h4 class="mb-0 py-1">中西醫結合預約系統</h4>
+          <h4 class="mb-0 py-1">
+            中西醫結合預約系統
+            <span class="en-sub">Integrated Chinese & Western Medicine Booking System</span>
+          </h4>
         </div>
         <div class="card-body">
           <form id="bookingForm" class="row g-3">
             
             <div class="col-md-12">
-              <label class="form-label fw-bold">姓名</label>
-              <input type="text" name="name" class="form-control form-control-lg" placeholder="請輸入姓名" required>
+              <label class="form-label fw-bold">姓名 <span class="text-muted fw-normal">/ Full Name</span></label>
+              <input type="text" name="name" class="form-control form-control-lg" placeholder="請輸入姓名 / Please enter your name" required>
             </div>
             
             <div class="col-md-12">
-              <label class="form-label fw-bold">電話</label>
-              <input type="tel" name="phone" class="form-control form-control-lg" placeholder="請輸入香港電話" required>
+              <label class="form-label fw-bold">電話 <span class="text-muted fw-normal">/ Phone Number</span></label>
+              <input type="tel" name="phone" class="form-control form-control-lg" placeholder="請輸入香港電話 / Hong Kong phone number" required>
             </div>
             
             <div class="col-md-12">
-              <label class="form-label fw-bold">電郵</label>
-              <input type="email" name="email" class="form-control form-control-lg" placeholder="請輸入常用電郵" required>
+              <label class="form-label fw-bold">電郵 <span class="text-muted fw-normal">/ Email Address</span></label>
+              <input type="email" name="email" class="form-control form-control-lg" placeholder="請輸入常用電郵 / e.g. user@example.com" required>
             </div>
             
             <div class="col-md-12">
-              <label class="form-label fw-bold">選擇日期</label>
-              <input type="text" id="dateInput" name="date" class="form-control form-control-lg" placeholder="正在載入日曆..." required disabled>
+              <label class="form-label fw-bold">選擇日期 <span class="text-muted fw-normal">/ Select Date</span></label>
+              <input type="text" id="dateInput" name="date" class="form-control form-control-lg" placeholder="正在載入日曆... / Loading calendar..." required disabled>
             </div>
             
             <div class="col-md-12">
-              <label class="form-label fw-bold">選擇時段</label>
+              <label class="form-label fw-bold">選擇時段 <span class="text-muted fw-normal">/ Select Time Slot</span></label>
               <select id="timeSelect" name="time" class="form-select form-select-lg" required disabled>
-                <option value="">請先選擇日期</option>
+                <option value="">請先選擇日期 / Please select a date first</option>
               </select>
             </div>
             
             <div class="col-12 mt-4">
-              <button type="submit" id="submitBtn" class="btn btn-success btn-lg w-100" disabled>提交預約</button>
+              <button type="submit" id="submitBtn" class="btn btn-success btn-lg w-100" disabled>
+                提交預約 / Submit Booking
+              </button>
             </div>
           </form>
         </div>
@@ -106,7 +124,7 @@
 <script>
 let serverData = {};
 let bookingToast;
-let fpInstance; // 儲存 Flatpickr 的實例
+let fpInstance; 
 
 window.addEventListener('DOMContentLoaded', () => {
   bookingToast = new bootstrap.Toast(document.getElementById('bookingToast'));
@@ -115,7 +133,7 @@ window.addEventListener('DOMContentLoaded', () => {
   
   fetch(fetchUrl)
     .then(res => {
-      if (!res.ok) throw new Error("伺服器回應錯誤");
+      if (!res.ok) throw new Error("伺服器回應錯誤 / Server Error");
       return res.json();
     })
     .then(data => {
@@ -123,7 +141,7 @@ window.addEventListener('DOMContentLoaded', () => {
       serverData = {};
 
       rawSlots.forEach(item => {
-        const d = item.date; // 格式需為 YYYY-MM-DD
+        const d = item.date; 
         const t = item.time;
         if (d && t) {
           if (!serverData[d]) { serverData[d] = []; }
@@ -132,39 +150,38 @@ window.addEventListener('DOMContentLoaded', () => {
       });
 
       const dateInput = document.getElementById("dateInput");
-      const enableDates = Object.keys(serverData); // 獲取所有有時段的日期陣列
+      const enableDates = Object.keys(serverData); 
       
       if (enableDates.length > 0) {
         dateInput.disabled = false;
-        dateInput.placeholder = "請點擊選擇日期";
+        dateInput.placeholder = "請點擊選擇日期 / Click to select date";
 
         // 初始化 Flatpickr 日曆
         fpInstance = flatpickr("#dateInput", {
-          locale: "zh_tw",          // 繁體中文
-          dateFormat: "Y-m-d",      // 輸出格式 YYYY-MM-DD
-          minDate: "today",         // 不能選過去的時間
-          maxDate: new Date().fp_incr(90), // 限制只能選 3 個月內（90天）
-          enable: enableDates,      // 【核心】只有這個陣列裡的日期可以選，其餘一律變灰！
+          locale: "zh_tw",          // 預設為繁中，月份與星期格式清晰
+          dateFormat: "Y-m-d",      
+          minDate: "today",         
+          maxDate: new Date().fp_incr(90), 
+          enable: enableDates,      
           onChange: function(selectedDates, dateStr) {
             handleDateChange(dateStr);
           }
         });
       } else {
-        dateInput.placeholder = "暫時沒有可預約的日子";
+        dateInput.placeholder = "暫時沒有可預約的日子 / No available dates";
       }
     })
     .catch(err => {
       console.error("載入失敗：", err);
-      document.getElementById("dateInput").placeholder = "無法載入日曆，請重新整理";
+      document.getElementById("dateInput").placeholder = "無法載入日曆，請重新整理 / Failed to load calendar, please refresh";
     });
 });
 
-// 當使用者在日曆選好日期時觸發
 function handleDateChange(selectedDate) {
   const timeSelect = document.getElementById("timeSelect");
   const submitBtn = document.getElementById("submitBtn");
   
-  timeSelect.innerHTML = '<option value="">--- 請選擇時段 ---</option>';
+  timeSelect.innerHTML = '<option value="">--- 請選擇時段 / Please select a time slot ---</option>';
   
   if (!selectedDate) {
     timeSelect.disabled = true;
@@ -185,7 +202,7 @@ function handleDateChange(selectedDate) {
     timeSelect.disabled = false;
     submitBtn.disabled = false;
   } else {
-    timeSelect.innerHTML = '<option value="">此日子剛好滿額了！</option>';
+    timeSelect.innerHTML = '<option value="">此日子剛好滿額了！ / Fully Booked!</option>';
     timeSelect.disabled = true;
     submitBtn.disabled = true;
   }
@@ -216,7 +233,7 @@ document.getElementById("bookingForm").addEventListener("submit", function(e){
   submitBtn.disabled = true;
   submitBtn.classList.remove('btn-success');
   submitBtn.classList.add('btn-secondary');
-  submitBtn.textContent = "正在處理，請勿關閉...";
+  submitBtn.textContent = "正在處理，請勿關閉... / Processing, please wait...";
 
   const formData = new FormData(this);
   const searchParams = new URLSearchParams();
@@ -233,26 +250,27 @@ document.getElementById("bookingForm").addEventListener("submit", function(e){
   })
   .then(res => {
     if (res.ok) return res.text();
-    throw new Error("連線失敗");
+    throw new Error("連線失敗 / Connection failed");
   })
   .then(text => {
     let data = { success: true };
     try { data = JSON.parse(text); } catch (e) { }
 
     if(data.success === false) {
-      showPopupNotification(data.message || "預約失敗，時段已被佔用。", false);
+      const errMsg = data.message || "預約失敗，時段已被佔用。 / Booking failed, the timeslot has been taken.";
+      showPopupNotification(errMsg, false);
       submitBtn.disabled = false;
       submitBtn.classList.remove('btn-secondary');
       submitBtn.classList.add('btn-success');
-      submitBtn.textContent = "提交預約";
+      submitBtn.textContent = "提交預約 / Submit Booking";
     } else {
-      showPopupNotification("預約成功！正在更新名額...", true);
+      showPopupNotification("預約成功！正在更新名額... / Booking successful! Updating slots...", true);
       setTimeout(() => { location.reload(); }, 3500);
     }
   })
   .catch(err => {
     console.error(err);
-    showPopupNotification("預約已提交！頁面即將更新...", true);
+    showPopupNotification("預約已提交！頁面即將更新... / Booking submitted! Refreshing page...", true);
     setTimeout(() => { location.reload(); }, 3500);
   });
 });
